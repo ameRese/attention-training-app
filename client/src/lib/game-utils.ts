@@ -26,9 +26,9 @@ export const DEFAULT_SETTINGS: GameSettings = {
 };
 
 export const DIFFICULTY_CONFIG: Record<Difficulty, DifficultyConfig> = {
-  easy: { spawnInterval: 2000, targetSize: 120, decayTime: 3000, distractorChance: 0 },
-  normal: { spawnInterval: 1000, targetSize: 100, decayTime: 2000, distractorChance: 0.3 },
-  hard: { spawnInterval: 600, targetSize: 80, decayTime: 1200, distractorChance: 0.5 },
+  easy: { spawnInterval: 1500, targetSize: 120, decayTime: 3000, distractorChance: 0 },
+  normal: { spawnInterval: 800, targetSize: 100, decayTime: 2000, distractorChance: 0.3 },
+  hard: { spawnInterval: 500, targetSize: 80, decayTime: 1200, distractorChance: 0.5 },
 };
 
 const STORAGE_KEY = 'attention-app-highscores';

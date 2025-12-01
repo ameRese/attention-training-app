@@ -283,10 +283,8 @@ export default function Game() {
               top: target.y,
               width: DIFFICULTY_CONFIG[settings.difficulty].targetSize,
               height: DIFFICULTY_CONFIG[settings.difficulty].targetSize,
-              backgroundColor: target.isDistractor ? 'var(--destructive)' : 'var(--target)',
-              boxShadow: target.isDistractor 
-                ? '0 0 20px var(--destructive), inset 0 0 20px rgba(255,255,255,0.3)'
-                : '0 0 20px var(--target), inset 0 0 20px rgba(255,255,255,0.5)',
+              backgroundColor: 'var(--target)',
+              boxShadow: '0 0 20px var(--target), inset 0 0 20px rgba(255,255,255,0.5)',
               // Gear shape for distractor using clip-path
               clipPath: target.isDistractor 
                 ? 'polygon(50% 0%, 55% 10%, 65% 5%, 68% 15%, 78% 12%, 79% 23%, 88% 22%, 87% 33%, 95% 35%, 92% 45%, 98% 50%, 92% 55%, 95% 65%, 87% 67%, 88% 78%, 79% 77%, 78% 88%, 68% 85%, 65% 95%, 55% 90%, 50% 100%, 45% 90%, 35% 95%, 32% 85%, 22% 88%, 21% 77%, 12% 78%, 13% 67%, 5% 65%, 8% 55%, 2% 50%, 8% 45%, 5% 35%, 13% 33%, 12% 22%, 21% 23%, 22% 12%, 32% 15%, 35% 5%, 45% 10%)' // Jagged circle / Gear shape
