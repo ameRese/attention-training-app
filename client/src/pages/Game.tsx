@@ -116,8 +116,9 @@ export default function Game() {
     };
   }, [gameState, settings.difficulty, stopGame]);
 
-  const handleTargetClick = (e: React.MouseEvent, id: number, isDistractor: boolean) => {
+  const handleTargetClick = (e: React.PointerEvent, id: number, isDistractor: boolean) => {
     e.stopPropagation();
+    e.preventDefault(); // Prevent default touch actions
     
     if (isDistractor) {
       // Penalty for clicking distractor
@@ -133,7 +134,7 @@ export default function Game() {
     setTargets((prev) => prev.filter((t) => t.id !== id));
   };
 
-  const handleBackgroundClick = () => {
+  const handleBackgroundClick = (e: React.PointerEvent) => {
     if (gameState === 'playing') {
       // Optional: Penalty for miss clicking background?
       // For now, just play miss sound but no score penalty to keep it encouraging
@@ -237,8 +238,8 @@ export default function Game() {
   if (gameState === 'playing') {
     return (
       <div 
-        className="fixed inset-0 bg-background cursor-crosshair overflow-hidden select-none"
-        onClick={handleBackgroundClick}
+        className="fixed inset-0 bg-background cursor-crosshair overflow-hidden select-none touch-none"
+        onPointerDown={handleBackgroundClick}
         ref={gameAreaRef}
       >
         {/* Game Background */}
@@ -273,9 +274,9 @@ export default function Game() {
         {targets.map((target) => (
           <button
             key={target.id}
-            onClick={(e) => handleTargetClick(e, target.id, target.isDistractor)}
+            onPointerDown={(e) => handleTargetClick(e, target.id, target.isDistractor)}
             className={cn(
-              "absolute shadow-lg active:scale-95 transition-transform animate-in zoom-in duration-300 cursor-pointer z-10 flex items-center justify-center",
+              "absolute shadow-lg active:scale-95 transition-transform animate-in zoom-in duration-300 cursor-pointer z-10 flex items-center justify-center touch-none",
               target.isDistractor ? "rounded-md" : "rounded-full"
             )}
             style={{
