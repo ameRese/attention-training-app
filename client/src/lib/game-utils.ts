@@ -6,6 +6,13 @@ export interface GameSettings {
   volume: number; // 0 to 1
 }
 
+export interface DifficultyConfig {
+  spawnInterval: number;
+  targetSize: number;
+  decayTime: number;
+  distractorChance: number; // 0 to 1, probability of spawning a distractor
+}
+
 export interface HighScore {
   date: string; // YYYY-MM-DD
   score: number;
@@ -18,10 +25,10 @@ export const DEFAULT_SETTINGS: GameSettings = {
   volume: 0.5,
 };
 
-export const DIFFICULTY_CONFIG = {
-  easy: { spawnInterval: 2000, targetSize: 120, decayTime: 3000 },
-  normal: { spawnInterval: 1000, targetSize: 100, decayTime: 2000 },
-  hard: { spawnInterval: 600, targetSize: 80, decayTime: 1200 },
+export const DIFFICULTY_CONFIG: Record<Difficulty, DifficultyConfig> = {
+  easy: { spawnInterval: 2000, targetSize: 120, decayTime: 3000, distractorChance: 0 },
+  normal: { spawnInterval: 1000, targetSize: 100, decayTime: 2000, distractorChance: 0.3 },
+  hard: { spawnInterval: 600, targetSize: 80, decayTime: 1200, distractorChance: 0.5 },
 };
 
 const STORAGE_KEY = 'attention-app-highscores';

@@ -3,17 +3,16 @@ import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { GameSettings, DIFFICULTY_CONFIG, saveScore, getDailyHighScore } from '@/lib/game-utils';
-import { Volume2, VolumeX, ArrowLeft, Play, RotateCcw } from 'lucide-react';
+import { Volume2, VolumeX, ArrowLeft, Play, RotateCcw, Settings, Info } from 'lucide-react';
 import { useSound } from '@/hooks/useSound';
 import { cn } from '@/lib/utils';
-
-
 
 interface Target {
   id: number;
   x: number;
   y: number;
   createdAt: number;
+  isDistractor: boolean;
 }
 
 export default function Game() {
@@ -91,11 +90,15 @@ export default function Game() {
       const x = Math.random() * (clientWidth - size - padding * 2) + padding;
       const y = Math.random() * (clientHeight - size - padding * 2) + padding;
 
+      // Determine if this spawn should be a distractor
+      const isDistractor = Math.random() < config.distractorChance;
+
       const newTarget: Target = {
         id: nextIdRef.current++,
         x,
         y,
         createdAt: Date.now(),
+        isDistractor,
       };
 
       setTargets((prev) => [...prev, newTarget]);
@@ -113,17 +116,28 @@ export default function Game() {
     };
   }, [gameState, settings.difficulty, stopGame]);
 
-  const handleTargetClick = (e: React.MouseEvent, id: number) => {
+  const handleTargetClick = (e: React.MouseEvent, id: number, isDistractor: boolean) => {
     e.stopPropagation();
-    playSuccess(settings.volume);
-    setScore((prev) => prev + 100);
+    
+    if (isDistractor) {
+      // Penalty for clicking distractor
+      playMiss(settings.volume);
+      setScore((prev) => Math.max(0, prev - 50)); // Prevent negative score
+      // Visual feedback for error could be added here
+    } else {
+      // Success for clicking correct target
+      playSuccess(settings.volume);
+      setScore((prev) => prev + 100);
+    }
+    
     setTargets((prev) => prev.filter((t) => t.id !== id));
   };
 
   const handleBackgroundClick = () => {
     if (gameState === 'playing') {
-      playMiss(settings.volume);
-      // Optional: Penalty for miss clicking?
+      // Optional: Penalty for miss clicking background?
+      // For now, just play miss sound but no score penalty to keep it encouraging
+      // playMiss(settings.volume);
     }
   };
 
@@ -143,11 +157,11 @@ export default function Game() {
         
         <Card className="w-full max-w-md p-8 z-10 neu-flat bg-card/90 backdrop-blur-sm border-none">
           <h1 className="text-3xl font-bold text-primary mb-2 text-center">Attention Training</h1>
-          <p className="text-muted-foreground text-center mb-8">Clinical Rehabilitation Tool</p>
+          <p className="text-muted-foreground text-center mb-8">臨床リハビリテーションツール</p>
 
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Difficulty</label>
+              <label className="text-sm font-medium">難易度</label>
               <div className="grid grid-cols-3 gap-2">
                 {(['easy', 'normal', 'hard'] as const).map((d) => (
                   <button
@@ -160,14 +174,19 @@ export default function Game() {
                         : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                     )}
                   >
-                    {d.charAt(0).toUpperCase() + d.slice(1)}
+                    {d === 'easy' ? 'かんたん' : d === 'normal' ? 'ふつう' : 'むずかしい'}
                   </button>
                 ))}
               </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {settings.difficulty === 'easy' && '丸いターゲットのみが出現します。'}
+                {settings.difficulty === 'normal' && '時々、歯車型の「お邪魔ターゲット」が出現します。丸いターゲットだけをクリックしてください。'}
+                {settings.difficulty === 'hard' && '頻繁に「お邪魔ターゲット」が出現します。素早く正確に判断してください。'}
+              </p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Duration: {settings.duration}s</label>
+              <label className="text-sm font-medium">制限時間: {settings.duration}秒</label>
               <input
                 type="range"
                 min="30"
@@ -182,7 +201,7 @@ export default function Game() {
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center gap-2">
                 {settings.volume > 0 ? <Volume2 size={16} /> : <VolumeX size={16} />}
-                Volume: {Math.round(settings.volume * 100)}%
+                音量: {Math.round(settings.volume * 100)}%
               </label>
               <input
                 type="range"
@@ -196,7 +215,9 @@ export default function Game() {
             </div>
 
             <div className="pt-4 text-center">
-              <p className="text-sm text-muted-foreground mb-2">Today's Best ({settings.difficulty})</p>
+              <p className="text-sm text-muted-foreground mb-2">本日の最高スコア ({
+                settings.difficulty === 'easy' ? 'かんたん' : settings.difficulty === 'normal' ? 'ふつう' : 'むずかしい'
+              })</p>
               <p className="text-2xl font-bold text-primary">{highScore}</p>
             </div>
 
@@ -204,7 +225,7 @@ export default function Game() {
               onClick={startGame} 
               className="w-full h-12 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
             >
-              Start Session
+              スタート
             </Button>
           </div>
         </Card>
@@ -233,12 +254,12 @@ export default function Game() {
         {/* HUD */}
         <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-start z-20 pointer-events-none">
           <div className="bg-card/80 backdrop-blur px-6 py-3 rounded-2xl neu-flat">
-            <p className="text-sm text-muted-foreground uppercase tracking-wider">Score</p>
+            <p className="text-sm text-muted-foreground uppercase tracking-wider">スコア</p>
             <p className="text-3xl font-bold text-primary tabular-nums">{score}</p>
           </div>
           
           <div className="bg-card/80 backdrop-blur px-6 py-3 rounded-2xl neu-flat">
-            <p className="text-sm text-muted-foreground uppercase tracking-wider">Time</p>
+            <p className="text-sm text-muted-foreground uppercase tracking-wider">残り時間</p>
             <p className={cn(
               "text-3xl font-bold tabular-nums",
               timeLeft <= 10 ? "text-destructive animate-pulse" : "text-primary"
@@ -252,15 +273,24 @@ export default function Game() {
         {targets.map((target) => (
           <button
             key={target.id}
-            onClick={(e) => handleTargetClick(e, target.id)}
-            className="absolute rounded-full shadow-lg active:scale-95 transition-transform animate-in zoom-in duration-300 cursor-pointer z-10"
+            onClick={(e) => handleTargetClick(e, target.id, target.isDistractor)}
+            className={cn(
+              "absolute shadow-lg active:scale-95 transition-transform animate-in zoom-in duration-300 cursor-pointer z-10 flex items-center justify-center",
+              target.isDistractor ? "rounded-md" : "rounded-full"
+            )}
             style={{
               left: target.x,
               top: target.y,
               width: DIFFICULTY_CONFIG[settings.difficulty].targetSize,
               height: DIFFICULTY_CONFIG[settings.difficulty].targetSize,
-              backgroundColor: 'var(--target)',
-              boxShadow: '0 0 20px var(--target), inset 0 0 20px rgba(255,255,255,0.5)',
+              backgroundColor: target.isDistractor ? 'var(--destructive)' : 'var(--target)',
+              boxShadow: target.isDistractor 
+                ? '0 0 20px var(--destructive), inset 0 0 20px rgba(255,255,255,0.3)'
+                : '0 0 20px var(--target), inset 0 0 20px rgba(255,255,255,0.5)',
+              // Gear shape for distractor using clip-path
+              clipPath: target.isDistractor 
+                ? 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)' // Star/Gear-ish shape
+                : undefined
             }}
           />
         ))}
@@ -281,20 +311,22 @@ export default function Game() {
         />
 
       <Card className="w-full max-w-md p-8 z-10 neu-flat bg-card/90 backdrop-blur-sm border-none text-center">
-        <h2 className="text-2xl font-bold text-primary mb-6">Session Complete</h2>
+        <h2 className="text-2xl font-bold text-primary mb-6">セッション終了</h2>
         
         <div className="mb-8 space-y-2">
-          <p className="text-muted-foreground">Final Score</p>
+          <p className="text-muted-foreground">最終スコア</p>
           <p className="text-5xl font-bold text-primary">{score}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-8">
           <div className="bg-secondary/50 p-4 rounded-xl">
-            <p className="text-xs text-muted-foreground uppercase">Difficulty</p>
-            <p className="font-semibold capitalize">{settings.difficulty}</p>
+            <p className="text-xs text-muted-foreground uppercase">難易度</p>
+            <p className="font-semibold capitalize">
+              {settings.difficulty === 'easy' ? 'かんたん' : settings.difficulty === 'normal' ? 'ふつう' : 'むずかしい'}
+            </p>
           </div>
           <div className="bg-secondary/50 p-4 rounded-xl">
-            <p className="text-xs text-muted-foreground uppercase">Daily Best</p>
+            <p className="text-xs text-muted-foreground uppercase">本日のベスト</p>
             <p className="font-semibold">{Math.max(score, highScore)}</p>
           </div>
         </div>
@@ -306,14 +338,14 @@ export default function Game() {
             onClick={() => setGameState('menu')}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Menu
+            メニュー
           </Button>
           <Button 
             className="flex-1 h-12 shadow-lg"
             onClick={startGame}
           >
             <RotateCcw className="mr-2 h-4 w-4" />
-            Retry
+            もう一度
           </Button>
         </div>
       </Card>
