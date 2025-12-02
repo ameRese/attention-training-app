@@ -81,103 +81,7 @@ export default function Game() {
       });
     }, 1000);
 
-    // Spawner
-    spawnerRef.current = setInterval(() => {
-      if (!gameAreaRef.current) return;
-      
-      const { clientWidth, clientHeight } = gameAreaRef.current;
-      const size = config.targetSize;
-      const padding = 20;
-      const hudHeight = 100; // Approximate height of HUD area to avoid
-      
-      // Spawn multiple targets based on difficulty config
-      const spawnCount = config.simultaneousSpawns;
-      
-      setTargets(prevTargets => {
-        const newTargets = [...prevTargets];
-        
-        for (let i = 0; i < spawnCount; i++) {
-          let x = 0;
-          let y = 0;
-          let attempts = 0;
-          let validPosition = false;
-
-          // Try to find a valid position that doesn't overlap with existing targets (of different type)
-          // and doesn't overlap with HUD
-          while (attempts < 10 && !validPosition) {
-            x = Math.random() * (clientWidth - size - padding * 2) + padding;
-            y = Math.random() * (clientHeight - size - padding * 2 - hudHeight) + padding + hudHeight;
-            
-            // Determine if this spawn should be a distractor
-            const isDistractor = settings.distractorEnabled && Math.random() < config.distractorChance;
-            
-            // Check for overlap with existing targets of DIFFERENT type
-            // Overlap allowed if same type (target-target or distractor-distractor)
-            // But requested: "Target and Distractor should not overlap"
-            // "Targets can overlap targets, Distractors can overlap distractors"
-            
-            let hasOverlap = false;
-            for (const t of newTargets) {
-              if (t.isDistractor !== isDistractor) {
-                const dx = t.x - x;
-                const dy = t.y - y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                if (distance < size) { // Simple circle collision check
-                  hasOverlap = true;
-                  break;
-                }
-              }
-            }
-            
-            if (!hasOverlap) {
-              validPosition = true;
-              
-              const newTarget: Target = {
-                id: nextIdRef.current++,
-                x,
-                y,
-                createdAt: Date.now(),
-                isDistractor,
-              };
-              
-              newTargets.push(newTarget);
-              
-              // Schedule removal for this specific target
-              // Note: We can't use setTimeout inside setState updater safely for side effects usually,
-              // but here we need to schedule the removal. 
-              // Better approach: Use a separate effect or manage removal time in the loop?
-              // For simplicity in this refactor, we'll keep the timeout but we need to be careful.
-              // Actually, the previous implementation had a bug where setTargets in timeout used stale closure if not careful,
-              // but functional update `prev => ...` handles it.
-              // However, we are inside a setTargets call right now! We can't call setTargets again here.
-              
-              // Correct approach: Just add to list here. 
-              // The removal needs to be handled differently or we accept the complexity.
-              // Let's move the timeout OUTSIDE the setTargets updater.
-            }
-            attempts++;
-          }
-        }
-        return newTargets;
-      });
-      
-      // We need to schedule removals for the newly added targets.
-      // Since we can't easily know exactly which IDs were added inside the setTargets updater above without complex logic,
-      // we will change the strategy: Generate targets first, then set state.
-      
-    }, config.spawnInterval);
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (spawnerRef.current) clearInterval(spawnerRef.current);
-    };
-  }, [gameState, settings.difficulty, settings.distractorEnabled, stopGame]);
-
-  // Refined Spawner Logic (Effect replacement)
-  useEffect(() => {
-    if (gameState !== 'playing') return;
-    const config = DIFFICULTY_CONFIG[settings.difficulty];
-
+    // Spawner Logic
     const spawnLogic = () => {
       if (!gameAreaRef.current) return;
       const { clientWidth, clientHeight } = gameAreaRef.current;
@@ -246,9 +150,10 @@ export default function Game() {
     spawnerRef.current = setInterval(spawnLogic, config.spawnInterval);
 
     return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
       if (spawnerRef.current) clearInterval(spawnerRef.current);
     };
-  }, [gameState, settings.difficulty, settings.distractorEnabled]);
+  }, [gameState, settings.difficulty, settings.distractorEnabled, stopGame]);
 
 
   const handleTargetClick = (e: React.PointerEvent, id: number, isDistractor: boolean) => {
