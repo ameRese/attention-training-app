@@ -33,7 +33,7 @@ export const DIFFICULTY_CONFIG: Record<Difficulty, DifficultyConfig> = {
   easy: { spawnInterval: 1500, targetSize: 120, decayTime: 3000, distractorChance: 0, simultaneousSpawns: 1 },
   normal: { spawnInterval: 800, targetSize: 100, decayTime: 2000, distractorChance: 0.3, simultaneousSpawns: 1 },
   hard: { spawnInterval: 500, targetSize: 80, decayTime: 1200, distractorChance: 0.5, simultaneousSpawns: 1 },
-  expert: { spawnInterval: 400, targetSize: 70, decayTime: 1000, distractorChance: 0.6, simultaneousSpawns: 2 },
+  expert: { spawnInterval: 600, targetSize: 70, decayTime: 1200, distractorChance: 0.4, simultaneousSpawns: 2 },
 };
 
 const STORAGE_KEY = 'attention-app-highscores';

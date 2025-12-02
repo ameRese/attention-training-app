@@ -204,16 +204,16 @@ export default function Game() {
               </p>
             </div>
 
-            <div className="flex items-center justify-between space-x-2 py-2">
-              <Label htmlFor="distractor-mode" className="flex flex-col space-y-1">
-                <span>お邪魔ターゲット</span>
-                <span className="font-normal text-xs text-muted-foreground">歯車型のターゲットが出現します</span>
-              </Label>
-              <Switch
-                id="distractor-mode"
-                checked={settings.distractorEnabled}
-                onCheckedChange={(checked) => setSettings({ ...settings, distractorEnabled: checked })}
-              />
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="distractor-mode" className="text-sm font-medium">お邪魔ターゲット</Label>
+                <Switch
+                  id="distractor-mode"
+                  checked={settings.distractorEnabled}
+                  onCheckedChange={(checked) => setSettings({ ...settings, distractorEnabled: checked })}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">歯車型のターゲットが出現します</p>
             </div>
 
             <div className="space-y-2">
