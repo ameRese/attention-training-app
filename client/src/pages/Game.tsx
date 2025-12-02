@@ -2,7 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { GameSettings, DIFFICULTY_CONFIG, saveScore, getDailyHighScore } from '@/lib/game-utils';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { GameSettings, DIFFICULTY_CONFIG, saveScore, getDailyHighScore, Difficulty } from '@/lib/game-utils';
 import { Volume2, VolumeX, ArrowLeft, Play, RotateCcw, Settings, Info } from 'lucide-react';
 import { useSound } from '@/hooks/useSound';
 import { cn } from '@/lib/utils';
@@ -19,7 +21,7 @@ export default function Game() {
   const [location, setLocation] = useLocation();
   const [settings, setSettings] = useState<GameSettings>(() => {
     const saved = localStorage.getItem('game-settings');
-    return saved ? JSON.parse(saved) : { duration: 60, difficulty: 'normal', volume: 0.5 };
+    return saved ? JSON.parse(saved) : { duration: 60, difficulty: 'normal', volume: 0.5, distractorEnabled: true };
   });
 
   const [gameState, setGameState] = useState<'menu' | 'playing' | 'finished'>('menu');
@@ -34,12 +36,12 @@ export default function Game() {
   const spawnerRef = useRef<NodeJS.Timeout | null>(null);
   const nextIdRef = useRef(0);
 
-  // Load high score when entering menu
+  // Load high score when entering menu or changing settings
   useEffect(() => {
     if (gameState === 'menu') {
-      setHighScore(getDailyHighScore(settings.difficulty));
+      setHighScore(getDailyHighScore(settings.difficulty, settings.distractorEnabled));
     }
-  }, [gameState, settings.difficulty]);
+  }, [gameState, settings.difficulty, settings.distractorEnabled]);
 
   // Save settings when changed
   useEffect(() => {
@@ -58,9 +60,9 @@ export default function Game() {
     if (timerRef.current) clearInterval(timerRef.current);
     if (spawnerRef.current) clearInterval(spawnerRef.current);
     setGameState('finished');
-    saveScore(score, settings.difficulty);
-    setHighScore(getDailyHighScore(settings.difficulty));
-  }, [score, settings.difficulty]);
+    saveScore(score, settings.difficulty, settings.distractorEnabled);
+    setHighScore(getDailyHighScore(settings.difficulty, settings.distractorEnabled));
+  }, [score, settings.difficulty, settings.distractorEnabled]);
 
   // Game Loop
   useEffect(() => {
@@ -87,26 +89,32 @@ export default function Game() {
       const size = config.targetSize;
       const padding = 20;
       
-      const x = Math.random() * (clientWidth - size - padding * 2) + padding;
-      const y = Math.random() * (clientHeight - size - padding * 2) + padding;
+      // Spawn multiple targets based on difficulty config
+      const spawnCount = config.simultaneousSpawns;
+      
+      for (let i = 0; i < spawnCount; i++) {
+        const x = Math.random() * (clientWidth - size - padding * 2) + padding;
+        const y = Math.random() * (clientHeight - size - padding * 2) + padding;
 
-      // Determine if this spawn should be a distractor
-      const isDistractor = Math.random() < config.distractorChance;
+        // Determine if this spawn should be a distractor
+        // Only spawn distractor if enabled in settings AND random chance hits
+        const isDistractor = settings.distractorEnabled && Math.random() < config.distractorChance;
 
-      const newTarget: Target = {
-        id: nextIdRef.current++,
-        x,
-        y,
-        createdAt: Date.now(),
-        isDistractor,
-      };
+        const newTarget: Target = {
+          id: nextIdRef.current++,
+          x,
+          y,
+          createdAt: Date.now(),
+          isDistractor,
+        };
 
-      setTargets((prev) => [...prev, newTarget]);
+        setTargets((prev) => [...prev, newTarget]);
 
-      // Auto-remove after decay time (missed)
-      setTimeout(() => {
-        setTargets((prev) => prev.filter((t) => t.id !== newTarget.id));
-      }, config.decayTime);
+        // Auto-remove after decay time (missed)
+        setTimeout(() => {
+          setTargets((prev) => prev.filter((t) => t.id !== newTarget.id));
+        }, config.decayTime);
+      }
 
     }, config.spawnInterval);
 
@@ -114,7 +122,7 @@ export default function Game() {
       if (timerRef.current) clearInterval(timerRef.current);
       if (spawnerRef.current) clearInterval(spawnerRef.current);
     };
-  }, [gameState, settings.difficulty, stopGame]);
+  }, [gameState, settings.difficulty, settings.distractorEnabled, stopGame]);
 
   const handleTargetClick = (e: React.PointerEvent, id: number, isDistractor: boolean) => {
     e.stopPropagation();
@@ -142,6 +150,15 @@ export default function Game() {
     }
   };
 
+  const getDifficultyLabel = (d: Difficulty) => {
+    switch(d) {
+      case 'easy': return 'かんたん';
+      case 'normal': return 'ふつう';
+      case 'hard': return 'むずかしい';
+      case 'expert': return 'さいきょう';
+    }
+  };
+
   // Render Menu
   if (gameState === 'menu') {
     return (
@@ -163,27 +180,40 @@ export default function Game() {
           <div className="space-y-6">
             <div className="space-y-2">
               <label className="text-sm font-medium">難易度</label>
-              <div className="grid grid-cols-3 gap-2">
-                {(['easy', 'normal', 'hard'] as const).map((d) => (
+              <div className="grid grid-cols-4 gap-2">
+                {(['easy', 'normal', 'hard', 'expert'] as const).map((d) => (
                   <button
                     key={d}
                     onClick={() => setSettings({ ...settings, difficulty: d })}
                     className={cn(
-                      "px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                      "px-2 py-2 rounded-lg text-xs font-medium transition-all",
                       settings.difficulty === d
                         ? "bg-primary text-primary-foreground neu-pressed"
                         : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                     )}
                   >
-                    {d === 'easy' ? 'かんたん' : d === 'normal' ? 'ふつう' : 'むずかしい'}
+                    {getDifficultyLabel(d)}
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {settings.difficulty === 'easy' && '丸いターゲットのみが出現します。'}
-                {settings.difficulty === 'normal' && '時々、歯車型の「お邪魔ターゲット」が出現します。丸いターゲットだけをクリックしてください。'}
-                {settings.difficulty === 'hard' && '頻繁に「お邪魔ターゲット」が出現します。素早く正確に判断してください。'}
+              <p className="text-xs text-muted-foreground mt-1 h-8">
+                {settings.difficulty === 'easy' && 'ターゲットがゆっくり出現します。'}
+                {settings.difficulty === 'normal' && '標準的な速度でターゲットが出現します。'}
+                {settings.difficulty === 'hard' && 'ターゲットが素早く出現します。'}
+                {settings.difficulty === 'expert' && 'ターゲットが同時に2つ出現します。両手での操作を推奨します。'}
               </p>
+            </div>
+
+            <div className="flex items-center justify-between space-x-2 py-2">
+              <Label htmlFor="distractor-mode" className="flex flex-col space-y-1">
+                <span>お邪魔ターゲット</span>
+                <span className="font-normal text-xs text-muted-foreground">歯車型のターゲットが出現します</span>
+              </Label>
+              <Switch
+                id="distractor-mode"
+                checked={settings.distractorEnabled}
+                onCheckedChange={(checked) => setSettings({ ...settings, distractorEnabled: checked })}
+              />
             </div>
 
             <div className="space-y-2">
@@ -191,7 +221,7 @@ export default function Game() {
               <input
                 type="range"
                 min="30"
-                max="180"
+                max="300"
                 step="30"
                 value={settings.duration}
                 onChange={(e) => setSettings({ ...settings, duration: Number(e.target.value) })}
@@ -216,9 +246,7 @@ export default function Game() {
             </div>
 
             <div className="pt-4 text-center">
-              <p className="text-sm text-muted-foreground mb-2">本日の最高スコア ({
-                settings.difficulty === 'easy' ? 'かんたん' : settings.difficulty === 'normal' ? 'ふつう' : 'むずかしい'
-              })</p>
+              <p className="text-sm text-muted-foreground mb-2">本日の最高スコア ({getDifficultyLabel(settings.difficulty)} / {settings.distractorEnabled ? 'お邪魔あり' : 'お邪魔なし'})</p>
               <p className="text-2xl font-bold text-primary">{highScore}</p>
             </div>
 
@@ -319,9 +347,12 @@ export default function Game() {
 
         <div className="grid grid-cols-2 gap-4 mb-8">
           <div className="bg-secondary/50 p-4 rounded-xl">
-            <p className="text-xs text-muted-foreground uppercase">難易度</p>
+            <p className="text-xs text-muted-foreground uppercase">設定</p>
             <p className="font-semibold capitalize">
-              {settings.difficulty === 'easy' ? 'かんたん' : settings.difficulty === 'normal' ? 'ふつう' : 'むずかしい'}
+              {getDifficultyLabel(settings.difficulty)}
+              <span className="block text-xs font-normal text-muted-foreground mt-1">
+                {settings.distractorEnabled ? 'お邪魔あり' : 'お邪魔なし'}
+              </span>
             </p>
           </div>
           <div className="bg-secondary/50 p-4 rounded-xl">
