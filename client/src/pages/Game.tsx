@@ -235,11 +235,19 @@ export default function Game() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="distractor-mode" className="text-sm font-medium">お邪魔ターゲット</Label>
-                <Switch
-                  id="distractor-mode"
-                  checked={settings.distractorEnabled}
-                  onCheckedChange={(checked) => setSettings({ ...settings, distractorEnabled: checked })}
-                />
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSettings({ ...settings, distractorEnabled: !settings.distractorEnabled })}
+                    className={cn(
+                      "px-3 py-1 rounded-full text-xs font-medium transition-all border",
+                      settings.distractorEnabled
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-muted-foreground border-input hover:bg-accent"
+                    )}
+                  >
+                    {settings.distractorEnabled ? 'ON' : 'OFF'}
+                  </button>
+                </div>
               </div>
               <p className="text-xs text-muted-foreground">歯車型のターゲットが出現します</p>
             </div>
@@ -280,7 +288,7 @@ export default function Game() {
 
             <Button 
               onClick={startGame} 
-              className="w-full h-12 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+              className="w-full h-12 text-lg font-semibold shadow-lg hover:shadow-xl transition-all rounded-xl"
             >
               スタート
             </Button>
