@@ -298,6 +298,10 @@ export default function Game() {
             >
               スタート
             </Button>
+            
+            <div className="text-center pt-2">
+              <p className="text-[10px] text-muted-foreground/50">v1.0.0</p>
+            </div>
           </div>
         </Card>
       </div>
