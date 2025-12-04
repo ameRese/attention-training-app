@@ -70,16 +70,21 @@ export default function Game() {
 
     const config = DIFFICULTY_CONFIG[settings.difficulty];
 
-    // Timer
+    // Timer using Date.now() for accuracy
+    const startTime = Date.now();
+    const initialDuration = settings.duration;
+    
     timerRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 0) {
-          stopGame();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const newTimeLeft = initialDuration - elapsed;
+      
+      if (newTimeLeft <= 0) {
+        setTimeLeft(0);
+        stopGame();
+      } else {
+        setTimeLeft(newTimeLeft);
+      }
+    }, 100); // Check more frequently to prevent drift
 
     // Spawner Logic
     const spawnLogic = () => {
@@ -317,10 +322,13 @@ export default function Game() {
           
           <div className="bg-card/80 backdrop-blur px-6 py-3 rounded-2xl neu-flat">
             <p className="text-sm text-muted-foreground uppercase tracking-wider">残り時間</p>
-            <p className={cn(
-              "text-3xl font-bold tabular-nums",
-              timeLeft <= 10 ? "text-destructive animate-pulse" : "text-primary"
-            )}>
+            <p 
+              key={timeLeft <= 10 ? 'danger' : 'normal'} // Force re-render to prevent ghosting on SP
+              className={cn(
+                "text-3xl font-bold tabular-nums",
+                timeLeft <= 10 ? "text-destructive animate-pulse" : "text-primary"
+              )}
+            >
               {Math.floor(Math.max(0, timeLeft) / 60)}:{(Math.max(0, timeLeft) % 60).toString().padStart(2, '0')}
             </p>
           </div>
