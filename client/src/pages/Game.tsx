@@ -73,7 +73,7 @@ export default function Game() {
     // Timer
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
-        if (prev <= 1) {
+        if (prev <= 0) {
           stopGame();
           return 0;
         }
@@ -321,7 +321,7 @@ export default function Game() {
               "text-3xl font-bold tabular-nums",
               timeLeft <= 10 ? "text-destructive animate-pulse" : "text-primary"
             )}>
-              {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+              {Math.floor(Math.max(0, timeLeft) / 60)}:{(Math.max(0, timeLeft) % 60).toString().padStart(2, '0')}
             </p>
           </div>
         </div>
