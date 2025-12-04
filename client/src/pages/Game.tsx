@@ -35,6 +35,8 @@ export default function Game() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const spawnerRef = useRef<NodeJS.Timeout | null>(null);
   const nextIdRef = useRef(0);
+  const startTimeRef = useRef<number>(0);
+  const scoreRef = useRef(0);
 
   // Load high score when entering menu or changing settings
   useEffect(() => {
@@ -48,21 +50,28 @@ export default function Game() {
     localStorage.setItem('game-settings', JSON.stringify(settings));
   }, [settings]);
 
+  // Sync score to ref for access in callbacks without triggering re-renders
+  useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
+
   const startGame = () => {
     setScore(0);
+    scoreRef.current = 0;
     setTimeLeft(settings.duration);
     setTargets([]);
     setGameState('playing');
     nextIdRef.current = 0;
+    startTimeRef.current = Date.now();
   };
 
   const stopGame = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (spawnerRef.current) clearInterval(spawnerRef.current);
     setGameState('finished');
-    saveScore(score, settings.difficulty, settings.distractorEnabled);
+    saveScore(scoreRef.current, settings.difficulty, settings.distractorEnabled);
     setHighScore(getDailyHighScore(settings.difficulty, settings.distractorEnabled));
-  }, [score, settings.difficulty, settings.distractorEnabled]);
+  }, [settings.difficulty, settings.distractorEnabled]);
 
   // Game Loop
   useEffect(() => {
@@ -71,11 +80,11 @@ export default function Game() {
     const config = DIFFICULTY_CONFIG[settings.difficulty];
 
     // Timer using Date.now() for accuracy
-    const startTime = Date.now();
+    // Use ref to persist start time across renders if needed, though this effect should now be stable
     const initialDuration = settings.duration;
     
     timerRef.current = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
       const newTimeLeft = initialDuration - elapsed;
       
       if (newTimeLeft <= 0) {
