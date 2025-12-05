@@ -17,6 +17,14 @@ interface Target {
   isDistractor: boolean;
 }
 
+interface ClickData {
+  x: number;
+  y: number;
+  reactionTime: number;
+  isDistractor: boolean;
+  isMiss: boolean; // true if clicked on distractor or missed target (timeout) - currently only tracking clicks
+}
+
 export default function Game() {
   const [location, setLocation] = useLocation();
   const [settings, setSettings] = useState<GameSettings>(() => {
@@ -29,6 +37,7 @@ export default function Game() {
   const [timeLeft, setTimeLeft] = useState(settings.duration);
   const [targets, setTargets] = useState<Target[]>([]);
   const [highScore, setHighScore] = useState(0);
+  const [clickHistory, setClickHistory] = useState<ClickData[]>([]);
   const { playSuccess, playMiss } = useSound();
   
   const gameAreaRef = useRef<HTMLDivElement>(null);
@@ -60,6 +69,7 @@ export default function Game() {
     scoreRef.current = 0;
     setTimeLeft(settings.duration);
     setTargets([]);
+    setClickHistory([]);
     setGameState('playing');
     nextIdRef.current = 0;
     startTimeRef.current = Date.now();
@@ -174,6 +184,18 @@ export default function Game() {
     e.stopPropagation();
     e.preventDefault(); 
     
+    const target = targets.find(t => t.id === id);
+    if (target) {
+      const reactionTime = Date.now() - target.createdAt;
+      setClickHistory(prev => [...prev, {
+        x: target.x,
+        y: target.y,
+        reactionTime,
+        isDistractor,
+        isMiss: isDistractor
+      }]);
+    }
+
     if (isDistractor) {
       playMiss(settings.volume);
       setScore((prev) => Math.max(0, prev - 50)); 
@@ -408,6 +430,39 @@ export default function Game() {
             <p className="text-xs text-muted-foreground uppercase">本日のベスト</p>
             <p className="font-semibold">{Math.max(score, highScore)}</p>
           </div>
+        </div>
+
+        {/* Heatmap Analysis */}
+        <div className="mb-8">
+          <p className="text-sm font-medium mb-2 text-left">反応位置分析</p>
+          <div className="relative w-full aspect-video bg-secondary/30 rounded-lg border border-border overflow-hidden">
+            {/* Center line */}
+            <div className="absolute inset-y-0 left-1/2 w-px bg-primary/20" />
+            
+            {clickHistory.map((click, i) => (
+              <div
+                key={i}
+                className={cn(
+                  "absolute w-3 h-3 rounded-full transform -translate-x-1/2 -translate-y-1/2",
+                  click.isDistractor ? "bg-destructive" : "bg-green-500"
+                )}
+                style={{
+                  left: `${(click.x / (window.innerWidth)) * 100}%`,
+                  top: `${(click.y / (window.innerHeight)) * 100}%`,
+                  opacity: 0.6
+                }}
+                title={`反応時間: ${(click.reactionTime / 1000).toFixed(2)}秒`}
+              />
+            ))}
+            
+            <div className="absolute bottom-2 right-2 text-[10px] text-muted-foreground bg-background/80 px-2 py-1 rounded">
+              <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>正解
+              <span className="inline-block w-2 h-2 rounded-full bg-destructive ml-2 mr-1"></span>誤答
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2 text-left">
+            平均反応時間: {(clickHistory.filter(c => !c.isDistractor).reduce((acc, c) => acc + c.reactionTime, 0) / Math.max(1, clickHistory.filter(c => !c.isDistractor).length) / 1000).toFixed(2)}秒
+          </p>
         </div>
 
         <div className="flex gap-4">
