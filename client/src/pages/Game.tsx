@@ -13,6 +13,8 @@ interface Target {
   id: number;
   x: number;
   y: number;
+  screenWidth: number;
+  screenHeight: number;
   createdAt: number;
   isDistractor: boolean;
 }
@@ -157,6 +159,8 @@ export default function Game() {
                 id: nextIdRef.current++,
                 x,
                 y,
+                screenWidth: clientWidth,
+                screenHeight: clientHeight,
                 createdAt: Date.now(),
                 isDistractor,
               };
@@ -171,8 +175,8 @@ export default function Game() {
                     setClickHistory(history => [...history, {
                       x: target.x,
                       y: target.y,
-                      screenWidth: clientWidth,
-                      screenHeight: clientHeight,
+                      screenWidth: target.screenWidth,
+                      screenHeight: target.screenHeight,
                       reactionTime: config.decayTime,
                       isDistractor: false,
                       isMiss: true,
@@ -209,8 +213,8 @@ export default function Game() {
       setClickHistory(prev => [...prev, {
         x: target.x,
         y: target.y,
-        screenWidth: window.innerWidth,
-        screenHeight: window.innerHeight,
+        screenWidth: target.screenWidth,
+        screenHeight: target.screenHeight,
         reactionTime,
         isDistractor,
         isMiss: isDistractor
@@ -343,7 +347,7 @@ export default function Game() {
             </Button>
             
             <div className="text-center pt-2">
-              <p className="text-[10px] text-muted-foreground/50">v1.1.1</p>
+              <p className="text-[10px] text-muted-foreground/50">v1.1.2</p>
             </div>
           </div>
         </Card>
