@@ -20,6 +20,8 @@ interface Target {
 interface ClickData {
   x: number;
   y: number;
+  screenWidth: number;
+  screenHeight: number;
   reactionTime: number;
   isDistractor: boolean;
   isMiss: boolean; // true if clicked on distractor
@@ -169,6 +171,8 @@ export default function Game() {
                     setClickHistory(history => [...history, {
                       x: target.x,
                       y: target.y,
+                      screenWidth: clientWidth,
+                      screenHeight: clientHeight,
                       reactionTime: config.decayTime,
                       isDistractor: false,
                       isMiss: true,
@@ -205,6 +209,8 @@ export default function Game() {
       setClickHistory(prev => [...prev, {
         x: target.x,
         y: target.y,
+        screenWidth: window.innerWidth,
+        screenHeight: window.innerHeight,
         reactionTime,
         isDistractor,
         isMiss: isDistractor
@@ -337,7 +343,7 @@ export default function Game() {
             </Button>
             
             <div className="text-center pt-2">
-              <p className="text-[10px] text-muted-foreground/50">v1.1.0</p>
+              <p className="text-[10px] text-muted-foreground/50">v1.1.1</p>
             </div>
           </div>
         </Card>
@@ -464,8 +470,8 @@ export default function Game() {
                   "bg-green-500" // Correct click
                 )}
                 style={{
-                  left: `${(click.x / (window.innerWidth)) * 100}%`,
-                  top: `${(click.y / (window.innerHeight)) * 100}%`,
+                  left: `${(click.x / click.screenWidth) * 100}%`,
+                  top: `${(click.y / click.screenHeight) * 100}%`,
                   opacity: click.isTimeout ? 0.5 : 0.8
                 }}
                 title={click.isTimeout ? "見落とし" : `反応時間: ${(click.reactionTime / 1000).toFixed(2)}秒`}
