@@ -172,9 +172,13 @@ export default function Game() {
                   const target = prev.find(t => t.id === newTarget.id);
                   // If target still exists (wasn't clicked) and is NOT a distractor, record as missed
                   if (target && !target.isDistractor) {
+                    // Calculate center position for heatmap
+                    const centerX = target.x + config.targetSize / 2;
+                    const centerY = target.y + config.targetSize / 2;
+                    
                     setClickHistory(history => [...history, {
-                      x: target.x,
-                      y: target.y,
+                      x: centerX,
+                      y: centerY,
                       screenWidth: target.screenWidth,
                       screenHeight: target.screenHeight,
                       reactionTime: config.decayTime,
@@ -209,10 +213,15 @@ export default function Game() {
     
     const target = targets.find(t => t.id === id);
     if (target) {
+      const config = DIFFICULTY_CONFIG[settings.difficulty];
+      // Calculate center position for heatmap
+      const centerX = target.x + config.targetSize / 2;
+      const centerY = target.y + config.targetSize / 2;
+
       const reactionTime = Date.now() - target.createdAt;
       setClickHistory(prev => [...prev, {
-        x: target.x,
-        y: target.y,
+        x: centerX,
+        y: centerY,
         screenWidth: target.screenWidth,
         screenHeight: target.screenHeight,
         reactionTime,
@@ -347,7 +356,7 @@ export default function Game() {
             </Button>
             
             <div className="text-center pt-2">
-              <p className="text-[10px] text-muted-foreground/50">v1.1.2</p>
+              <p className="text-[10px] text-muted-foreground/50">v1.1.3</p>
             </div>
           </div>
         </Card>
