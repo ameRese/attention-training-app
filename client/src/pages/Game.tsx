@@ -22,7 +22,8 @@ interface ClickData {
   y: number;
   reactionTime: number;
   isDistractor: boolean;
-  isMiss: boolean; // true if clicked on distractor or missed target (timeout) - currently only tracking clicks
+  isMiss: boolean; // true if clicked on distractor
+  isTimeout?: boolean; // true if target disappeared without being clicked
 }
 
 export default function Game() {
@@ -161,7 +162,21 @@ export default function Game() {
               
               // Schedule removal
               setTimeout(() => {
-                setTargets(prev => prev.filter(t => t.id !== newTarget.id));
+                setTargets(prev => {
+                  const target = prev.find(t => t.id === newTarget.id);
+                  // If target still exists (wasn't clicked) and is NOT a distractor, record as missed
+                  if (target && !target.isDistractor) {
+                    setClickHistory(history => [...history, {
+                      x: target.x,
+                      y: target.y,
+                      reactionTime: config.decayTime,
+                      isDistractor: false,
+                      isMiss: true,
+                      isTimeout: true
+                    }]);
+                  }
+                  return prev.filter(t => t.id !== newTarget.id);
+                });
               }, config.decayTime);
             }
             attempts++;
@@ -322,7 +337,7 @@ export default function Game() {
             </Button>
             
             <div className="text-center pt-2">
-              <p className="text-[10px] text-muted-foreground/50">v1.0.0</p>
+              <p className="text-[10px] text-muted-foreground/50">v1.1.0</p>
             </div>
           </div>
         </Card>
@@ -444,20 +459,23 @@ export default function Game() {
                 key={i}
                 className={cn(
                   "absolute w-3 h-3 rounded-full transform -translate-x-1/2 -translate-y-1/2",
-                  click.isDistractor ? "bg-destructive" : "bg-green-500"
+                  click.isTimeout ? "bg-yellow-500 border border-yellow-700" : // Missed (Timeout)
+                  click.isDistractor ? "bg-destructive" : // Wrong click (Distractor)
+                  "bg-green-500" // Correct click
                 )}
                 style={{
                   left: `${(click.x / (window.innerWidth)) * 100}%`,
                   top: `${(click.y / (window.innerHeight)) * 100}%`,
-                  opacity: 0.6
+                  opacity: click.isTimeout ? 0.5 : 0.8
                 }}
-                title={`反応時間: ${(click.reactionTime / 1000).toFixed(2)}秒`}
+                title={click.isTimeout ? "見落とし" : `反応時間: ${(click.reactionTime / 1000).toFixed(2)}秒`}
               />
             ))}
             
-            <div className="absolute bottom-2 right-2 text-[10px] text-muted-foreground bg-background/80 px-2 py-1 rounded">
-              <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>正解
-              <span className="inline-block w-2 h-2 rounded-full bg-destructive ml-2 mr-1"></span>誤答
+            <div className="absolute bottom-2 right-2 text-[10px] text-muted-foreground bg-background/80 px-2 py-1 rounded flex gap-2">
+              <span className="flex items-center"><span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>正解</span>
+              <span className="flex items-center"><span className="inline-block w-2 h-2 rounded-full bg-destructive mr-1"></span>誤答</span>
+              <span className="flex items-center"><span className="inline-block w-2 h-2 rounded-full bg-yellow-500 border border-yellow-700 mr-1"></span>見落とし</span>
             </div>
           </div>
           <p className="text-xs text-muted-foreground mt-2 text-left">
