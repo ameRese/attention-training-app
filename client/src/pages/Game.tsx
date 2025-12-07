@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { GameSettings, DIFFICULTY_CONFIG, saveScore, getDailyHighScore, Difficulty } from '@/lib/game-utils';
-import { Volume2, VolumeX, ArrowLeft, Play, RotateCcw, Settings, Info, Moon, Sun } from 'lucide-react';
+import { Volume2, VolumeX, ArrowLeft, Play, RotateCcw, Settings, Info } from 'lucide-react';
 import { useSound } from '@/hooks/useSound';
 import { cn } from '@/lib/utils';
 
@@ -36,24 +36,6 @@ export default function Game() {
     const saved = localStorage.getItem('game-settings');
     return saved ? JSON.parse(saved) : { duration: 60, difficulty: 'normal', volume: 0.5, distractorEnabled: true };
   });
-  
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return document.documentElement.classList.contains('dark') || 
-             localStorage.getItem('theme') === 'dark';
-    }
-    return false;
-  });
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDarkMode]);
 
   const [gameState, setGameState] = useState<'menu' | 'playing' | 'finished'>('menu');
   const [score, setScore] = useState(0);
@@ -134,7 +116,7 @@ export default function Game() {
       const { clientWidth, clientHeight } = gameAreaRef.current;
       const size = config.targetSize;
       const padding = 20;
-      const hudHeight = 80; // Avoid top area where score/time is displayed
+      const hudHeight = 120; // Avoid top area where score/time is displayed
 
       setTargets(currentTargets => {
         const newTargetsToAdd: Target[] = [];
@@ -290,18 +272,6 @@ export default function Game() {
         />
         
         <Card className="w-full max-w-md p-8 z-10 neu-flat bg-card/90 backdrop-blur-sm border-none">
-          <div className="flex justify-end mb-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="rounded-full"
-              title={isDarkMode ? "ライトモードに切り替え" : "ダークモードに切り替え"}
-            >
-              {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </Button>
-          </div>
-
           <h1 className="text-3xl font-bold text-primary mb-2 text-center">Attention Training</h1>
           <p className="text-muted-foreground text-center mb-8">臨床リハビリテーションツール</p>
 
@@ -386,7 +356,7 @@ export default function Game() {
             </Button>
             
             <div className="text-center pt-2">
-              <p className="text-[10px] text-muted-foreground/50">v1.2.0</p>
+              <p className="text-[10px] text-muted-foreground/50">v1.1.3</p>
             </div>
           </div>
         </Card>
@@ -413,7 +383,7 @@ export default function Game() {
         />
 
         {/* HUD */}
-        <div className="absolute top-0 left-0 right-0 p-2 flex justify-between items-start z-20 pointer-events-none">
+        <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-start z-20 pointer-events-none">
           <div className="bg-card/80 backdrop-blur px-6 py-3 rounded-2xl neu-flat">
             <p className="text-sm text-muted-foreground uppercase tracking-wider">スコア</p>
             <p className="text-3xl font-bold text-primary tabular-nums">{score}</p>
@@ -439,7 +409,7 @@ export default function Game() {
             key={target.id}
             onPointerDown={(e) => handleTargetClick(e, target.id, target.isDistractor)}
             className={cn(
-              "absolute shadow-lg active:scale-95 transition-transform animate-in zoom-in duration-300 cursor-pointer z-30 flex items-center justify-center touch-none",
+              "absolute shadow-lg active:scale-95 transition-transform animate-in zoom-in duration-300 cursor-pointer z-10 flex items-center justify-center touch-none",
               target.isDistractor ? "rounded-md" : "rounded-full"
             )}
             style={{
