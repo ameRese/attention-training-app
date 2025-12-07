@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { GameSettings, DIFFICULTY_CONFIG, saveScore, getDailyHighScore, Difficulty } from '@/lib/game-utils';
-import { Volume2, VolumeX, ArrowLeft, Play, RotateCcw, Settings, Info } from 'lucide-react';
+import { Volume2, VolumeX, ArrowLeft, Play, RotateCcw, Settings, Info, Moon, Sun } from 'lucide-react';
 import { useSound } from '@/hooks/useSound';
 import { cn } from '@/lib/utils';
 
@@ -36,6 +36,24 @@ export default function Game() {
     const saved = localStorage.getItem('game-settings');
     return saved ? JSON.parse(saved) : { duration: 60, difficulty: 'normal', volume: 0.5, distractorEnabled: true };
   });
+  
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return document.documentElement.classList.contains('dark') || 
+             localStorage.getItem('theme') === 'dark';
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDarkMode]);
 
   const [gameState, setGameState] = useState<'menu' | 'playing' | 'finished'>('menu');
   const [score, setScore] = useState(0);
@@ -272,6 +290,18 @@ export default function Game() {
         />
         
         <Card className="w-full max-w-md p-8 z-10 neu-flat bg-card/90 backdrop-blur-sm border-none">
+          <div className="flex justify-end mb-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="rounded-full"
+              title={isDarkMode ? "ライトモードに切り替え" : "ダークモードに切り替え"}
+            >
+              {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+          </div>
+
           <h1 className="text-3xl font-bold text-primary mb-2 text-center">Attention Training</h1>
           <p className="text-muted-foreground text-center mb-8">臨床リハビリテーションツール</p>
 
@@ -356,7 +386,7 @@ export default function Game() {
             </Button>
             
             <div className="text-center pt-2">
-              <p className="text-[10px] text-muted-foreground/50">v1.1.3</p>
+              <p className="text-[10px] text-muted-foreground/50">v1.2.0</p>
             </div>
           </div>
         </Card>
