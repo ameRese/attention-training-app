@@ -134,7 +134,7 @@ export default function Game() {
       const { clientWidth, clientHeight } = gameAreaRef.current;
       const size = config.targetSize;
       const padding = 20;
-      const hudHeight = 120; // Avoid top area where score/time is displayed
+      const hudHeight = 80; // Avoid top area where score/time is displayed
 
       setTargets(currentTargets => {
         const newTargetsToAdd: Target[] = [];
@@ -413,7 +413,7 @@ export default function Game() {
         />
 
         {/* HUD */}
-        <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-start z-20 pointer-events-none">
+        <div className="absolute top-0 left-0 right-0 p-2 flex justify-between items-start z-20 pointer-events-none">
           <div className="bg-card/80 backdrop-blur px-6 py-3 rounded-2xl neu-flat">
             <p className="text-sm text-muted-foreground uppercase tracking-wider">スコア</p>
             <p className="text-3xl font-bold text-primary tabular-nums">{score}</p>
@@ -439,7 +439,7 @@ export default function Game() {
             key={target.id}
             onPointerDown={(e) => handleTargetClick(e, target.id, target.isDistractor)}
             className={cn(
-              "absolute shadow-lg active:scale-95 transition-transform animate-in zoom-in duration-300 cursor-pointer z-10 flex items-center justify-center touch-none",
+              "absolute shadow-lg active:scale-95 transition-transform animate-in zoom-in duration-300 cursor-pointer z-30 flex items-center justify-center touch-none",
               target.isDistractor ? "rounded-md" : "rounded-full"
             )}
             style={{
