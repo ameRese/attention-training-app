@@ -360,7 +360,7 @@ export default function Game() {
             </Button>
             
             <div className="text-center pt-2">
-              <p className="text-[10px] text-muted-foreground/50">v1.1.3</p>
+              <p className="text-[10px] text-muted-foreground/50">v1.1.4</p>
             </div>
           </div>
         </Card>
@@ -539,7 +539,7 @@ export default function Game() {
               <Line 
                 type="monotone" 
                 dataKey="reaction" 
-                stroke="hsl(var(--primary))" 
+                stroke="#2563eb" 
                 strokeWidth={2} 
                 dot={{ r: 2 }}
                 activeDot={{ r: 4 }}
