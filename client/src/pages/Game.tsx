@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { GameSettings, DIFFICULTY_CONFIG, saveScore, getDailyHighScore, Difficulty } from '@/lib/game-utils';
 import { Volume2, VolumeX, ArrowLeft, Play, RotateCcw, Settings, Info } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useSound } from '@/hooks/useSound';
 import { cn } from '@/lib/utils';
 
@@ -28,6 +29,7 @@ interface ClickData {
   isDistractor: boolean;
   isMiss: boolean; // true if clicked on distractor
   isTimeout?: boolean; // true if target disappeared without being clicked
+  timestamp: number; // Elapsed time since game start in ms
 }
 
 export default function Game() {
@@ -184,7 +186,8 @@ export default function Game() {
                       reactionTime: config.decayTime,
                       isDistractor: false,
                       isMiss: true,
-                      isTimeout: true
+                      isTimeout: true,
+                      timestamp: Date.now() - startTimeRef.current
                     }]);
                   }
                   return prev.filter(t => t.id !== newTarget.id);
@@ -226,7 +229,8 @@ export default function Game() {
         screenHeight: target.screenHeight,
         reactionTime,
         isDistractor,
-        isMiss: isDistractor
+        isMiss: isDistractor,
+        timestamp: Date.now() - startTimeRef.current
       }]);
     }
 
@@ -500,6 +504,48 @@ export default function Game() {
           <p className="text-xs text-muted-foreground mt-2 text-left">
             平均反応時間: {(clickHistory.filter(c => !c.isDistractor).reduce((acc, c) => acc + c.reactionTime, 0) / Math.max(1, clickHistory.filter(c => !c.isDistractor).length) / 1000).toFixed(2)}秒
           </p>
+        </div>
+
+        {/* Attention Span Graph */}
+        <div className="w-full h-48 mb-6">
+          <h3 className="text-sm font-medium mb-2 text-muted-foreground">集中力推移（反応速度）</h3>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={clickHistory
+                .filter(c => !c.isDistractor && !c.isMiss)
+                .sort((a, b) => a.timestamp - b.timestamp)
+                .map(c => ({
+                  time: Math.floor(c.timestamp / 1000),
+                  reaction: c.reactionTime / 1000
+                }))
+              }
+              margin={{ top: 5, right: 5, left: -20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+              <XAxis 
+                dataKey="time" 
+                label={{ value: '経過時間(秒)', position: 'insideBottomRight', offset: -5, fontSize: 10 }} 
+                tick={{ fontSize: 10 }}
+              />
+              <YAxis 
+                label={{ value: '反応(秒)', angle: -90, position: 'insideLeft', fontSize: 10 }} 
+                tick={{ fontSize: 10 }}
+                domain={[0, 'auto']}
+              />
+              <Tooltip 
+                labelFormatter={(v) => `${v}秒時点`}
+                formatter={(v: number) => [`${v.toFixed(2)}秒`, '反応速度']}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="reaction" 
+                stroke="hsl(var(--primary))" 
+                strokeWidth={2} 
+                dot={{ r: 2 }}
+                activeDot={{ r: 4 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
 
         <div className="flex gap-4">
