@@ -14,6 +14,10 @@ const plugins = [
   vitePluginManusRuntime(),
   VitePWA({
     registerType: 'autoUpdate',
+    devOptions: {
+      enabled: true,
+      type: 'module',
+    },
     includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg', 'images/*.png'],
     workbox: {
       globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
