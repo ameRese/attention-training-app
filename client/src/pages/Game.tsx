@@ -277,7 +277,7 @@ export default function Game() {
         
         <Card className="w-full max-w-md p-8 z-10 neu-flat bg-card/90 backdrop-blur-sm border-none">
           <h1 className="text-3xl font-bold text-primary mb-2 text-center">Attention Training</h1>
-          <p className="text-muted-foreground text-center mb-8 text-sm">画面内のランダムな位置に出現する光を素早くタップして得点。持続性注意と反応速度のトレーニング。</p>
+          <p className="text-muted-foreground text-center mb-8">臨床リハビリテーションツール</p>
 
           <div className="space-y-6">
             <div className="space-y-2">
@@ -360,7 +360,7 @@ export default function Game() {
             </Button>
             
             <div className="text-center pt-2">
-              <p className="text-[10px] text-muted-foreground/50">v1.1.5</p>
+              <p className="text-[10px] text-muted-foreground/50">v1.1.6</p>
             </div>
           </div>
         </Card>
