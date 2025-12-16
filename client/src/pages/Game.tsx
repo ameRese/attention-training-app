@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { GameSettings, DIFFICULTY_CONFIG, saveScore, getDailyHighScore, Difficulty } from '@/lib/game-utils';
-import { Volume2, VolumeX, ArrowLeft, Play, RotateCcw, Settings, Info } from 'lucide-react';
+import { Volume2, VolumeX, ArrowLeft, Play, RotateCcw, Settings, Info, Pause, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useSound } from '@/hooks/useSound';
 import { cn } from '@/lib/utils';
@@ -39,7 +39,7 @@ export default function Game() {
     return saved ? JSON.parse(saved) : { duration: 60, difficulty: 'normal', volume: 0.5, distractorEnabled: true };
   });
 
-  const [gameState, setGameState] = useState<'menu' | 'playing' | 'finished'>('menu');
+  const [gameState, setGameState] = useState<'menu' | 'playing' | 'paused' | 'finished'>('menu');
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(settings.duration);
   const [targets, setTargets] = useState<Target[]>([]);
@@ -90,27 +90,42 @@ export default function Game() {
     setHighScore(getDailyHighScore(settings.difficulty, settings.distractorEnabled));
   }, [settings.difficulty, settings.distractorEnabled]);
 
+  const pauseGame = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (spawnerRef.current) clearInterval(spawnerRef.current);
+    setGameState('paused');
+  }, []);
+
+  const resumeGame = useCallback(() => {
+    setGameState('playing');
+    // Timer and spawner will be restarted by the useEffect
+  }, []);
+
   // Game Loop
   useEffect(() => {
     if (gameState !== 'playing') return;
 
     const config = DIFFICULTY_CONFIG[settings.difficulty];
+    
+    // Adjust start time if resuming from pause to account for paused duration
+    // (Simple implementation: just restart timer from current timeLeft)
+    const loopStartTime = Date.now();
+    const initialTimeLeft = timeLeft;
 
     // Timer using Date.now() for accuracy
     // Use ref to persist start time across renders if needed, though this effect should now be stable
     const initialDuration = settings.duration;
     
     timerRef.current = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
-      const newTimeLeft = initialDuration - elapsed;
+      const elapsed = Math.floor((Date.now() - loopStartTime) / 1000);
+      const newTimeLeft = Math.max(0, initialTimeLeft - elapsed);
+      
+      setTimeLeft(newTimeLeft);
       
       if (newTimeLeft <= 0) {
-        setTimeLeft(0);
         stopGame();
-      } else {
-        setTimeLeft(newTimeLeft);
       }
-    }, 100); // Check more frequently to prevent drift
+    }, 100);
 
     // Spawner Logic
     const spawnLogic = () => {
@@ -360,7 +375,7 @@ export default function Game() {
             </Button>
             
             <div className="text-center pt-2">
-              <p className="text-[10px] text-muted-foreground/50">v1.1.6</p>
+              <p className="text-[10px] text-muted-foreground/50">v1.1.7</p>
             </div>
           </div>
         </Card>
@@ -369,7 +384,7 @@ export default function Game() {
   }
 
   // Render Game
-  if (gameState === 'playing') {
+  if (gameState === 'playing' || gameState === 'paused') {
     return (
       <div 
         className="fixed inset-0 bg-background cursor-crosshair overflow-hidden select-none touch-none"
@@ -386,24 +401,74 @@ export default function Game() {
           }}
         />
 
+        {/* Pause Overlay */}
+        {gameState === 'paused' && (
+          <div className="absolute inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+            <Card className="w-full max-w-sm p-8 neu-flat bg-card/90 border-none shadow-2xl">
+              <h2 className="text-2xl font-bold text-center mb-6 text-primary">一時停止中</h2>
+              <div className="space-y-4">
+                <Button 
+                  onClick={resumeGame} 
+                  className="w-full h-12 text-lg font-semibold shadow-lg"
+                >
+                  <Play className="mr-2 h-5 w-5" />
+                  再開する
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setGameState('menu')}
+                  className="w-full h-12 text-lg"
+                >
+                  <ArrowLeft className="mr-2 h-5 w-5" />
+                  メニューに戻る
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
+
         {/* HUD */}
-        <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-start z-20 pointer-events-none">
-          <div className="bg-card/80 backdrop-blur px-6 py-3 rounded-2xl neu-flat">
-            <p className="text-sm text-muted-foreground uppercase tracking-wider">スコア</p>
-            <p className="text-3xl font-bold text-primary tabular-nums">{score}</p>
+        <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start z-30 pointer-events-none">
+          {/* Left Group: Back Button + Score */}
+          <div className="flex items-center gap-3 pointer-events-auto">
+            <Button
+              variant="secondary"
+              size="icon"
+              className="h-12 w-12 rounded-full shadow-lg bg-card/90 backdrop-blur"
+              onClick={() => setGameState('menu')}
+            >
+              <ArrowLeft className="h-6 w-6" />
+            </Button>
+            
+            <div className="bg-card/90 backdrop-blur px-5 py-2 rounded-2xl shadow-lg min-w-[100px]">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">スコア</p>
+              <p className="text-2xl font-bold text-primary tabular-nums leading-none">{score}</p>
+            </div>
           </div>
           
-          <div className="bg-card/80 backdrop-blur px-6 py-3 rounded-2xl neu-flat">
-            <p className="text-sm text-muted-foreground uppercase tracking-wider">残り時間</p>
-            <p 
-              key={timeLeft <= 10 ? 'danger' : 'normal'} // Force re-render to prevent ghosting on SP
-              className={cn(
-                "text-3xl font-bold tabular-nums",
-                timeLeft <= 10 ? "text-destructive animate-pulse" : "text-primary"
-              )}
+          {/* Right Group: Time + Pause Button */}
+          <div className="flex items-center gap-3 pointer-events-auto">
+            <div className="bg-card/90 backdrop-blur px-5 py-2 rounded-2xl shadow-lg min-w-[100px] text-right">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">残り時間</p>
+              <p 
+                key={timeLeft <= 10 ? 'danger' : 'normal'}
+                className={cn(
+                  "text-2xl font-bold tabular-nums leading-none",
+                  timeLeft <= 10 ? "text-destructive animate-pulse" : "text-primary"
+                )}
+              >
+                {timeLeft}
+              </p>
+            </div>
+
+            <Button
+              variant="secondary"
+              size="icon"
+              className="h-12 w-12 rounded-full shadow-lg bg-card/90 backdrop-blur"
+              onClick={pauseGame}
             >
-              {Math.floor(Math.max(0, timeLeft) / 60)}:{(Math.max(0, timeLeft) % 60).toString().padStart(2, '0')}
-            </p>
+              <Pause className="h-6 w-6" />
+            </Button>
           </div>
         </div>
 
