@@ -375,7 +375,7 @@ export default function Game() {
             </Button>
             
             <div className="text-center pt-2">
-              <p className="text-[10px] text-muted-foreground/50">v1.1.7</p>
+              <p className="text-[10px] text-muted-foreground/50">v1.1.8</p>
             </div>
           </div>
         </Card>
@@ -440,7 +440,7 @@ export default function Game() {
               <ArrowLeft className="h-6 w-6" />
             </Button>
             
-            <div className="bg-card/90 backdrop-blur px-5 py-2 rounded-2xl shadow-lg min-w-[100px]">
+            <div className="bg-card/90 backdrop-blur px-5 py-2 rounded-2xl shadow-lg min-w-[100px] flex flex-col items-center justify-center">
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">スコア</p>
               <p className="text-2xl font-bold text-primary tabular-nums leading-none">{score}</p>
             </div>
@@ -448,7 +448,7 @@ export default function Game() {
           
           {/* Right Group: Time + Pause Button */}
           <div className="flex items-center gap-3 pointer-events-auto">
-            <div className="bg-card/90 backdrop-blur px-5 py-2 rounded-2xl shadow-lg min-w-[100px] text-right">
+            <div className="bg-card/90 backdrop-blur px-5 py-2 rounded-2xl shadow-lg min-w-[100px] flex flex-col items-center justify-center">
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">残り時間</p>
               <p 
                 key={timeLeft <= 10 ? 'danger' : 'normal'}
